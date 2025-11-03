@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link href="style.css" rel="stylesheet">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>My Tasks</h1>
+            <p>Stay organized and track your daily tasks</p>
+        </div>
+
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="todoInput" 
+                placeholder="Add a new task..."
+                autocomplete="off"
+            >
+            <button class="btn-add" onclick="addTodo()">Add</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="totalCount">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value" id="completedCount">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Progress</div>
+                <div style="margin-top: 4px;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="todosList" class="todos-list">
+            <div class="empty-state">
+                <div class="empty-state-icon">✓</div>
+                <p>No tasks yet. Add one to get started!</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
