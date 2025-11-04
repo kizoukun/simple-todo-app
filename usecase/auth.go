@@ -13,16 +13,19 @@ import (
 )
 
 type AuthUsecase struct {
+	userRepo *repository.UserRepository
 }
 
 func NewAuthUsecase() *AuthUsecase {
-	return &AuthUsecase{}
+	return &AuthUsecase{
+		userRepo: repository.NewUserRepository(),
+	}
 }
 
 func (uc AuthUsecase) AuthLoginHandler(req web.LoginRequest, response *web.ResponseHttp) {
 	// Handle user login
 
-	user, err := repository.GetUserByEmail(req.Email)
+	user, err := uc.userRepo.GetUserByEmail(req.Email)
 	if err != nil || user == nil {
 		response.StatusCode = http.StatusUnauthorized
 		response.Message = "Invalid email or password"
@@ -57,7 +60,7 @@ func (uc AuthUsecase) AuthLoginHandler(req web.LoginRequest, response *web.Respo
 func (uc AuthUsecase) AuthRegisterHandler(req web.RegisterRequest, response *web.ResponseHttp) {
 
 	// get user by email
-	existingUser, err := repository.GetUserByEmail(req.Email)
+	existingUser, err := uc.userRepo.GetUserByEmail(req.Email)
 	if err == nil && existingUser != nil {
 		response.StatusCode = http.StatusBadRequest
 		response.Message = "Email already in use"
@@ -71,7 +74,7 @@ func (uc AuthUsecase) AuthRegisterHandler(req web.RegisterRequest, response *web
 		return
 	}
 
-	err = repository.CreateUser(entity.User{
+	err = uc.userRepo.CreateUser(entity.User{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,

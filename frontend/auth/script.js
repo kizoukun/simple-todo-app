@@ -84,6 +84,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     successMsg.textContent = `Welcome back! Logged in as ${email}`;
     successMsg.classList.add('show');
     document.getElementById('loginForm').reset();
+    window.localStorage.setItem('authToken', resp.data.token || "");
 });
 
 // Register form submission

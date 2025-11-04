@@ -6,6 +6,8 @@ type Todo struct {
 	ID        int       `json:"id"`
 	Task      string    `json:"task"`
 	Completed bool      `json:"completed"`
+	CreatedBy int       `json:"created_by"`
+	BoardId   int       `json:"board_id"`
 	UpdatedAt time.Time `json:"updated_at"`
 	CreatedAt time.Time `json:"created_at"`
 }

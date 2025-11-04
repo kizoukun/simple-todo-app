@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kizoukun/codingtest/controller"
 	"github.com/kizoukun/codingtest/helper"
+	"github.com/kizoukun/codingtest/middleware"
 	"github.com/kizoukun/codingtest/mock"
 )
 
@@ -19,12 +20,22 @@ func main() {
 	mock.InitDbIncremental()
 	helper.InitHelper()
 
-	// register handlers with methods
-	r.HandleFunc("/api/v1/todos", controller.GetTodoController).Methods("GET")
-	r.HandleFunc("/api/v1/todos", controller.AddTodoController).Methods("POST")
-	r.HandleFunc("/api/v1/todos/{id}", controller.DeleteTodoController).Methods("DELETE")
-	r.HandleFunc("/api/v1/todos/{id}/complete", controller.ToggleTodoController).Methods("POST")
+	todos := r.PathPrefix("/api/v1").Subrouter()
+	todos.Use(middleware.JWTMiddleware)
 
+	// boards
+	todos.HandleFunc("/boards", controller.GetTodoBoardController).Methods("GET")
+	todos.HandleFunc("/boards", controller.AddTodoBoardController).Methods("POST")
+
+	//team invite
+	// register handlers with methods
+	todos.HandleFunc("/todos/{board_id}", controller.GetTodoController).Methods("GET")
+	todos.HandleFunc("/todos/{board_id}", controller.AddTodoController).Methods("POST")
+	todos.HandleFunc("/todos/{board_id}/invite", controller.InviteTodoTeamController).Methods("POST")
+	todos.HandleFunc("/todos/{board_id}/{id}", controller.DeleteTodoController).Methods("DELETE")
+	todos.HandleFunc("/todos/{board_id}/{id}/complete", controller.ToggleTodoController).Methods("POST")
+
+	r.HandleFunc("/api/v1/accept", controller.AcceptTodoTeamInviteController).Methods("POST")
 	r.HandleFunc("/api/v1/auth/login", controller.LoginController).Methods("POST")
 	r.HandleFunc("/api/v1/auth/register", controller.RegisterController).Methods("POST")
 

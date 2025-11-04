@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/kizoukun/codingtest/usecase"
@@ -10,11 +11,14 @@ import (
 )
 
 func GetTodoController(w http.ResponseWriter, r *http.Request) {
-	var req interface{}
+	var req web.GetTodoRequest
 	var response web.ResponseHttp
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	req.BoardID, _ = strconv.Atoi(vars["board_id"])
 
 	authUsecase := usecase.NewTodoUsecase()
-	authUsecase.GetTodoHandler(req, &response)
+	authUsecase.GetTodoHandler(ctx, req, &response)
 
 	w.WriteHeader(response.StatusCode)
 	json.NewEncoder(w).Encode(response)
@@ -23,6 +27,9 @@ func GetTodoController(w http.ResponseWriter, r *http.Request) {
 func AddTodoController(w http.ResponseWriter, r *http.Request) {
 	var req web.TodoRequest
 	var response web.ResponseHttp
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	req.BoardID, _ = strconv.Atoi(vars["board_id"])
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -33,7 +40,7 @@ func AddTodoController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todoUsecase := usecase.NewTodoUsecase()
-	todoUsecase.AddTodoHandler(req, &response)
+	todoUsecase.AddTodoHandler(ctx, req, &response)
 
 	w.WriteHeader(response.StatusCode)
 	json.NewEncoder(w).Encode(response)
@@ -44,9 +51,11 @@ func DeleteTodoController(w http.ResponseWriter, r *http.Request) {
 	var response web.ResponseHttp
 	vars := mux.Vars(r)
 	req.ID = vars["id"]
+	req.BoardID, _ = strconv.Atoi(vars["board_id"])
+	ctx := r.Context()
 
 	todoUsecase := usecase.NewTodoUsecase()
-	todoUsecase.DeleteTodoHandler(req, &response)
+	todoUsecase.DeleteTodoHandler(ctx, req, &response)
 
 	w.WriteHeader(response.StatusCode)
 	json.NewEncoder(w).Encode(response)
@@ -55,8 +64,10 @@ func DeleteTodoController(w http.ResponseWriter, r *http.Request) {
 func ToggleTodoController(w http.ResponseWriter, r *http.Request) {
 	var req web.ToggleTodoRequest
 	var response web.ResponseHttp
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	req.ID = vars["id"]
+	req.BoardID, _ = strconv.Atoi(vars["board_id"])
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -67,7 +78,7 @@ func ToggleTodoController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todoUsecase := usecase.NewTodoUsecase()
-	todoUsecase.ToggleTodoHandler(req, &response)
+	todoUsecase.ToggleTodoHandler(ctx, req, &response)
 
 	w.WriteHeader(response.StatusCode)
 	json.NewEncoder(w).Encode(response)

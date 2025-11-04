@@ -7,10 +7,19 @@ import (
 	"github.com/kizoukun/codingtest/mock"
 )
 
-var db = mock.NewDb[entity.User]("users.json")
+type UserRepository struct {
+	db *mock.MockDB[entity.User]
+}
 
-func GetUsers() ([]entity.User, error) {
-	data, err := db.GetData()
+func NewUserRepository() *UserRepository {
+	dbUser := mock.NewDb[entity.User]("users.json")
+	return &UserRepository{
+		db: dbUser,
+	}
+}
+
+func (repo *UserRepository) GetUsers() ([]entity.User, error) {
+	data, err := repo.db.GetData()
 	if err != nil {
 		return nil, err
 	}
@@ -18,17 +27,17 @@ func GetUsers() ([]entity.User, error) {
 	return data, nil
 }
 
-func CreateUser(user entity.User) error {
+func (repo *UserRepository) CreateUser(user entity.User) error {
 
-	err := db.InsertData(user)
+	err := repo.db.InsertData(user)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetUserByEmail(email string) (*entity.User, error) {
-	users, err := GetUsers()
+func (repo *UserRepository) GetUserByEmail(email string) (*entity.User, error) {
+	users, err := repo.GetUsers()
 	if err != nil {
 		return nil, err
 	}

@@ -1,28 +1,45 @@
 package usecase
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/kizoukun/codingtest/entity"
+	"github.com/kizoukun/codingtest/helper"
 	"github.com/kizoukun/codingtest/repository"
 	"github.com/kizoukun/codingtest/web"
 )
 
 type TodoUsecase struct {
-	todoRepo *repository.TodoRepository
+	todoRepo      *repository.TodoRepository
+	todoBoardRepo *repository.TodoBoardRepository
 }
 
 func NewTodoUsecase() *TodoUsecase {
 	return &TodoUsecase{
-		todoRepo: repository.NewTodoRepository(),
+		todoRepo:      repository.NewTodoRepository(),
+		todoBoardRepo: repository.NewTodoBoardRepository(),
 	}
 }
 
-func (uc *TodoUsecase) GetTodoHandler(req any, response *web.ResponseHttp) {
+func (uc *TodoUsecase) GetTodoHandler(context context.Context, req web.GetTodoRequest, response *web.ResponseHttp) {
 
-	data, err := uc.todoRepo.GetTodo()
+	user, ok := helper.UserFromContext(context)
+	if !ok || user == nil {
+		response.StatusCode = http.StatusUnauthorized
+		response.Message = "Unauthorized"
+		return
+	}
+
+	if _, err := uc.todoBoardRepo.GetById(req.BoardID); err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid Board ID: " + err.Error()
+		return
+	}
+
+	data, err := uc.todoRepo.GetByBoardId(req.BoardID)
 	if err != nil {
 		response.StatusCode = http.StatusInternalServerError
 		response.Message = "Failed to fetch todos" + err.Error()
@@ -35,9 +52,25 @@ func (uc *TodoUsecase) GetTodoHandler(req any, response *web.ResponseHttp) {
 	response.Success = true
 }
 
-func (uc *TodoUsecase) AddTodoHandler(req web.TodoRequest, response *web.ResponseHttp) {
+func (uc *TodoUsecase) AddTodoHandler(context context.Context, req web.TodoRequest, response *web.ResponseHttp) {
+
+	user, ok := helper.UserFromContext(context)
+	if !ok || user == nil {
+		response.StatusCode = http.StatusUnauthorized
+		response.Message = "Unauthorized"
+		return
+	}
+
+	if _, err := uc.todoBoardRepo.GetById(req.BoardID); err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid Board ID: " + err.Error()
+		return
+	}
+
 	err := uc.todoRepo.CreateTodo(entity.Todo{
-		Task: req.Task,
+		Task:      req.Task,
+		CreatedBy: user.ID,
+		BoardId:   req.BoardID,
 	})
 	if err != nil {
 		response.StatusCode = http.StatusInternalServerError
@@ -51,14 +84,21 @@ func (uc *TodoUsecase) AddTodoHandler(req web.TodoRequest, response *web.Respons
 	response.Success = true
 }
 
-func (uc *TodoUsecase) DeleteTodoHandler(req web.DeleteTodoRequest, response *web.ResponseHttp) {
+func (uc *TodoUsecase) DeleteTodoHandler(context context.Context, req web.DeleteTodoRequest, response *web.ResponseHttp) {
 
-	todos, err := uc.todoRepo.GetTodo()
+	if _, err := uc.todoBoardRepo.GetById(req.BoardID); err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid Board ID: " + err.Error()
+		return
+	}
+
+	todos, err := uc.todoRepo.GetByBoardId(req.BoardID)
 	if err != nil {
 		response.StatusCode = http.StatusInternalServerError
 		response.Message = "Failed to fetch todos: " + err.Error()
 		return
 	}
+
 	for index, todo := range todos {
 		if strconv.Itoa(todo.ID) == req.ID {
 			todos = append(todos[:index], todos[index+1:]...)
@@ -75,14 +115,21 @@ func (uc *TodoUsecase) DeleteTodoHandler(req web.DeleteTodoRequest, response *we
 
 }
 
-func (uc *TodoUsecase) ToggleTodoHandler(req web.ToggleTodoRequest, response *web.ResponseHttp) {
+func (uc *TodoUsecase) ToggleTodoHandler(context context.Context, req web.ToggleTodoRequest, response *web.ResponseHttp) {
 
-	todos, err := uc.todoRepo.GetTodo()
+	if _, err := uc.todoBoardRepo.GetById(req.BoardID); err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid Board ID: " + err.Error()
+		return
+	}
+
+	todos, err := uc.todoRepo.GetByBoardId(req.BoardID)
 	if err != nil {
 		response.StatusCode = http.StatusInternalServerError
 		response.Message = "Failed to fetch todos: " + err.Error()
 		return
 	}
+
 	for index, todo := range todos {
 		if strconv.Itoa(todo.ID) == req.ID {
 			todos[index].Completed = req.Completed
