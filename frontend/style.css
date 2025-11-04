@@ -227,3 +227,43 @@ body {
     width: 100%;
   }
 }
+
+.additional {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1em;
+}
+
+
+.btn-add-user {
+  padding: 8px 16px;
+  background-color: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-add-user:hover {
+  background-color: #2f855a;
+}
+
+.btn-delete-test {
+  padding: 8px 16px;
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-delete-test:hover {
+  background-color: #c53030;
+  color: white;
+}

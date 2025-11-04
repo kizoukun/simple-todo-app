@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="create_board.js" defer></script>
+  </head>
+  <body class="bg-gray-100">
+    <div
+      class="p-6 max-w-xl mx-auto bg-white rounded-xl shadow-md space-y-4 mt-8"
+    >
+      <h2 class="text-lg font-bold">Create New Board</h2>
+      <form id="createBoardForm" onsubmit="handleCreateBoard(event)" class="space-y-4">
+        <div>
+          <label for="title" class="block text-sm font-medium">
+            Board Name
+          </label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        <div>
+          <label for="description" class="block text-sm font-medium">
+            Description
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows="3"
+            required
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Create Board
+        </button>
+      </form>
+    </div>
+  </body>
+</html>

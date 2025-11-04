@@ -103,7 +103,7 @@ func (uc *TodoUsecase) DeleteTodoHandler(context context.Context, req web.Delete
 		if strconv.Itoa(todo.ID) == req.ID {
 			todos = append(todos[:index], todos[index+1:]...)
 			response.Success = true
-			response.StatusCode = http.StatusNoContent
+			response.StatusCode = http.StatusOK
 			response.Message = "Success delete todo"
 			uc.todoRepo.UpdateTodo(todos)
 			return

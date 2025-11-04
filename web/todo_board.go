@@ -20,3 +20,7 @@ type GetTodoBoardsResponseData struct {
 	OwnedBoards []entity.TodoBoard `json:"owned_boards"`
 	TeamBoards  []entity.TodoBoard `json:"team_boards"`
 }
+
+type DeleteTodoBoardRequest struct {
+	BoardID int `json:"board_id"`
+}

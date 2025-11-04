@@ -4,8 +4,15 @@ const BASE_API_URL = "http://localhost:8080/api/v1";
 document.addEventListener("DOMContentLoaded", onLoad)
 
 let todos = [];
+let boardId = null;
 
 async function onLoad() {
+    const urlParams = new URLSearchParams(window.location.search);
+    boardId = urlParams.get('id');
+    if (!boardId) {
+        alert("Board ID is missing in the URL");
+        return;
+    }
     await refetchTodoItems();
 }
 
@@ -20,9 +27,19 @@ async function refetchTodoItems() {
 
 async function fetchTodoItems() {
     try {
-        const response = await fetch(`${BASE_API_URL}/todos`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch(`${BASE_API_URL}/todos/${boardId}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            }
+        });
+        if (response.status === 401) {
+            window.location.href = "./auth/auth.html";
+            return null;
+        }
+        if (response.status === 404 || response.status === 400) {
+            window.location.href = "./boards/index.html";
+            return null;
         }
         const todoItems = await response.json();
         return todoItems;
@@ -78,10 +95,11 @@ async function addTodo() {
     if (text === '') return;
 
     try {
-        const response = await fetch(`${BASE_API_URL}/todos`, {
+        const response = await fetch(`${BASE_API_URL}/todos/${boardId}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
             },
             body: JSON.stringify({ task: text })
         });
@@ -104,11 +122,12 @@ async function toggleTodo(id) {
     }
 
     try {
-        const response = await fetch(`${BASE_API_URL}/todos/${id}/complete`, {
+        const response = await fetch(`${BASE_API_URL}/todos/${boardId}/${id}/complete`, {
             method: 'POST',
             body: JSON.stringify({ completed: !todo.completed }),
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
             }
         });
         if (!response.ok) {
@@ -122,8 +141,12 @@ async function toggleTodo(id) {
 
 async function deleteTodo(id) {
     try {
-        const response = await fetch(`${BASE_API_URL}/todos/${id}`, {
-            method: 'DELETE'
+        const response = await fetch(`${BASE_API_URL}/todos/${boardId}/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
         });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -143,3 +166,98 @@ function escapeHtml(text) {
 todoInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addTodo();
 });
+
+async function addUser() {
+    const email = prompt("Enter the email of the user to add:");
+    if (!email) return;
+
+    try {
+        const response = await fetch(`${BASE_API_URL}/todos/${boardId}/invite`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+            body: JSON.stringify({ email: email })
+        });
+        const data = await response.json();
+        if (!data.success) {
+            alert("Failed to add user: " + data.message);
+            return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await copyclipBoard(data.data.invite_code);
+        alert("User invited with this code (dev)!: " + data.data.invite_code);
+    } catch (error) {
+        console.error("Error adding user:", error);
+    }
+}
+
+
+async function copyclipBoard(code) {
+    // Try to ensure the document has focus (may help with NotAllowedError)
+    try { window.focus(); } catch (e) { /* ignore */ }
+
+    // Primary attempt: Clipboard API
+    async function tryClipboardWrite(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      // If Clipboard API not available, reject to trigger fallback
+      return Promise.reject(new Error('Clipboard API unavailable'));
+    }
+
+    // Fallback using a temporary textarea + execCommand('copy')
+    function fallbackCopyTextToClipboard(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      // Prevent scrolling to bottom
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (err) {
+        ok = false;
+      } finally {
+        document.body.removeChild(ta);
+      }
+      return ok;
+    }
+
+    // Try clipboard write, then fallback; show UI if all fail
+    try {
+      await tryClipboardWrite(code);
+      alert("User invited — invite code copied to clipboard: " + code);
+    } catch (err) {
+      // If writeText rejected due to focus or permission, try fallback
+      const ok = fallbackCopyTextToClipboard(code);
+    }
+}
+
+async function deleteBoard() {
+    if (!confirm("Are you sure you want to delete this board? This action cannot be undone.")) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${BASE_API_URL}/boards/${boardId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
+        const data = await response.json();
+        if (!data.success) {
+            alert("Failed to delete board: " + data.message);
+            return;
+        }
+        window.location.href = `./boards/index.html`;
+    } catch (error) {
+        console.error("Error deleting board:", error);
+    }
+}

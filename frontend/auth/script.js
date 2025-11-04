@@ -85,6 +85,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     successMsg.classList.add('show');
     document.getElementById('loginForm').reset();
     window.localStorage.setItem('authToken', resp.data.token || "");
+    window.location.href = "../boards/index.html";
 });
 
 // Register form submission

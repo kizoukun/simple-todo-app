@@ -100,3 +100,50 @@ func (uc *TodoBoardsUsecase) CreateTodoBoardHandler(context context.Context, req
 	response.Message = "Todo board created successfully"
 	response.Success = true
 }
+
+func (uc *TodoBoardsUsecase) DeleteTodoBoardHandler(context context.Context, req web.DeleteTodoBoardRequest, response *web.ResponseHttp) {
+	user, ok := helper.UserFromContext(context)
+	if !ok || user == nil {
+		response.StatusCode = http.StatusUnauthorized
+		response.Message = "Unauthorized"
+		return
+	}
+
+	board, err := uc.boardsRepo.GetById(req.BoardID)
+	if err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid Board ID: " + err.Error()
+		return
+	}
+
+	if board.CreatedBy != user.ID {
+		response.StatusCode = http.StatusForbidden
+		response.Message = "You do not have permission to delete this board"
+		return
+	}
+
+	allBoards, err := uc.boardsRepo.GetTodoBoard()
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to fetch todo boards: " + err.Error()
+		return
+	}
+
+	updatedBoards := make([]entity.TodoBoard, 0)
+	for _, b := range allBoards {
+		if b.ID != req.BoardID {
+			updatedBoards = append(updatedBoards, b)
+		}
+	}
+
+	err = uc.boardsRepo.UpdateTodoBoard(updatedBoards)
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to delete todo board: " + err.Error()
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Message = "Todo board deleted successfully"
+	response.Success = true
+}

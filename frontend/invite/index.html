@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Team Join Confirmation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        padding: 60px 40px;
+        max-width: 500px;
+        text-align: center;
+        animation: slideIn 0.5s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .checkmark {
+        width: 80px;
+        height: 80px;
+        background: #10b981;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 30px;
+        font-size: 40px;
+        color: white;
+        animation: scaleIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+
+      @keyframes scaleIn {
+        0% {
+          transform: scale(0);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      h1 {
+        font-size: 28px;
+        color: #1f2937;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        color: #6b7280;
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+      }
+
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #1f2937;
+      }
+
+      .btn-secondary:hover {
+        background: #d1d5db;
+        transform: translateY(-2px);
+      }
+
+      .status {
+        margin-top: 30px;
+        padding: 15px;
+        background: #f0fdf4;
+        border-left: 4px solid #10b981;
+        border-radius: 4px;
+        text-align: left;
+      }
+
+      .status-text {
+        font-size: 14px;
+        color: #047857;
+        font-weight: 500;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="checkmark" class="checkmark">✓</div>
+      <h1 id="message">You now joined this board team</h1>
+      <p id="subtitle" class="subtitle">
+        Welcome aboard! You're now a member of the team and can start
+        collaborating with your team members.
+      </p>
+    </div>
+
+    <script>
+      let isJoined = true;
+
+      const messageEl = document.getElementById("message");
+      function toggleMessage() {
+        isJoined = !isJoined;
+        const container = document.querySelector(".container");
+
+        // Add animation
+        container.style.animation = "none";
+        setTimeout(() => {
+          container.style.animation = "slideIn 0.5s ease-out";
+        }, 10);
+
+        if (isJoined) {
+          messageEl.textContent = "You now joined this board team";
+        } else {
+          messageEl.textContent = "You already join this team";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        acceptInvite();
+      });
+
+      async function acceptInvite() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get("code");
+        if (!code) {
+          alert("No invite code found in URL.");
+        }
+
+        try {
+          const response = await fetch(`http://localhost:8080/api/v1/accept`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ invite_code: code }),
+          });
+
+          if (response.status === 400) {
+            messageEl.textContent = "You already join this team";
+            return;
+          }
+          if (response.status === 404) {
+            messageEl.textContent = "Invalid or expired invite code";
+            const checkmarkEl = document.getElementById("checkmark");
+            checkmarkEl.style.background = "#ef4444"; // Red background
+            checkmarkEl.textContent = "✗"; // Cross mark
+            const subtitleEl = document.getElementById("subtitle");
+            subtitleEl.textContent =
+              "The invite code is invalid or has expired. Please contact the team administrator for a new invite.";
+            return;
+          }
+        } catch (error) {
+          console.error("Error accepting invite:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

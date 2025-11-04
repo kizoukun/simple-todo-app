@@ -33,14 +33,14 @@ func (uc *TodoTeamsUsecase) AcceptTodoTeamsInvite(ctx context.Context, req web.A
 	data := uc.redis.GetData(req.InviteCode)
 
 	if data == nil {
-		response.StatusCode = http.StatusBadRequest
+		response.StatusCode = http.StatusNotFound
 		response.Message = "Invalid or expired invite code"
 		return
 	}
 
 	inviteData, ok := data.(web.BoardInviteData)
 	if !ok {
-		response.StatusCode = http.StatusBadRequest
+		response.StatusCode = http.StatusNotFound
 		response.Message = "Invalid or expired invite code"
 		return
 	}

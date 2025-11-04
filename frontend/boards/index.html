@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body class="bg-gray-100">
+    <div class="p-6 container mx-auto bg-white rounded-xl shadow-md space-y-4 mt-8">
+        <div>
+            <a href="./create_board.html" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Create New Board
+            </a>
+        </div>
+      <div>Owned Boards</div>
+      <div id="ownedBoardsList" class="space-y-2 grid grid-cols-4 gap-4">
+        <!-- Owned boards will be dynamically inserted here -->
+         <a href="#" class="block">
+             <div class="bg-blue-200 rounded-lg p-2">adsa</div>
+         </a>
+      </div>
+
+      <div class="mt-6">Shared Boards</div>
+      <div id="sharedBoardsList" class="space-y-2 grid grid-cols-4 gap-4">
+        <!-- Shared boards will be dynamically inserted here -->
+      </div>
+    </div>
+  </body>
+</html>
