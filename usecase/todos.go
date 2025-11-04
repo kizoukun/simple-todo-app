@@ -1,83 +1,101 @@
 package usecase
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/kizoukun/codingtest/entity"
+	"github.com/kizoukun/codingtest/repository"
 	"github.com/kizoukun/codingtest/web"
 )
 
-var todos = []web.Todo{}
-var nextID = 1
-
-func TodoHandler(w http.ResponseWriter, r *http.Request) {
-	response := web.TodoGetResponse{Todos: todos}
-	json.NewEncoder(w).Encode(response)
+type TodoUsecase struct {
+	todoRepo *repository.TodoRepository
 }
 
-func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
-	var newTodo web.Todo
-	err := json.NewDecoder(r.Body).Decode(&newTodo)
+func NewTodoUsecase() *TodoUsecase {
+	return &TodoUsecase{
+		todoRepo: repository.NewTodoRepository(),
+	}
+}
+
+func (uc *TodoUsecase) GetTodoHandler(req any, response *web.ResponseHttp) {
+
+	data, err := uc.todoRepo.GetTodo()
 	if err != nil {
-		errorResponse := web.ErrorResponse{
-			Error: err.Error(),
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse)
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to fetch todos" + err.Error()
 		return
 	}
-	newTodo.ID = nextID
-	nextID++
-	todos = append(todos, newTodo)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newTodo)
+
+	response.StatusCode = http.StatusOK
+	response.Data = data
+	response.Message = "Todos fetched successfully"
+	response.Success = true
 }
 
-func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (uc *TodoUsecase) AddTodoHandler(req web.TodoRequest, response *web.ResponseHttp) {
+	err := uc.todoRepo.CreateTodo(entity.Todo{
+		Task: req.Task,
+	})
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to create todo: " + err.Error()
+		return
+	}
 
+	response.StatusCode = http.StatusCreated
+	response.Data = req
+	response.Message = "Todo created successfully"
+	response.Success = true
+}
+
+func (uc *TodoUsecase) DeleteTodoHandler(req web.DeleteTodoRequest, response *web.ResponseHttp) {
+
+	todos, err := uc.todoRepo.GetTodo()
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to fetch todos: " + err.Error()
+		return
+	}
 	for index, todo := range todos {
-		if strconv.Itoa(todo.ID) == id {
+		if strconv.Itoa(todo.ID) == req.ID {
 			todos = append(todos[:index], todos[index+1:]...)
-			w.WriteHeader(http.StatusNoContent)
+			response.Success = true
+			response.StatusCode = http.StatusNoContent
+			response.Message = "Success delete todo"
+			uc.todoRepo.UpdateTodo(todos)
 			return
 		}
 	}
-	errorResponse := web.ErrorResponse{
-		Error: "Todo Not Found",
-	}
-	w.WriteHeader(http.StatusNotFound)
-	json.NewEncoder(w).Encode(errorResponse)
+
+	response.StatusCode = http.StatusNotFound
+	response.Message = "Todo Not Found"
+
 }
 
-func ToggleTodoHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (uc *TodoUsecase) ToggleTodoHandler(req web.ToggleTodoRequest, response *web.ResponseHttp) {
 
-	var todoRequest web.ToggleTodoRequest
-	err := json.NewDecoder(r.Body).Decode(&todoRequest)
+	todos, err := uc.todoRepo.GetTodo()
 	if err != nil {
-		errorResponse := web.ErrorResponse{
-			Error: err.Error(),
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse)
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to fetch todos: " + err.Error()
 		return
 	}
-
 	for index, todo := range todos {
-		if strconv.Itoa(todo.ID) == id {
-			todos[index].Completed = todoRequest.Completed
-			json.NewEncoder(w).Encode(todos[index])
+		if strconv.Itoa(todo.ID) == req.ID {
+			todos[index].Completed = req.Completed
+			todos[index].UpdatedAt = time.Now()
+			response.Success = true
+			response.StatusCode = http.StatusOK
+			response.Message = "Success toggle todo"
+			response.Data = todos[index]
+			uc.todoRepo.UpdateTodo(todos)
 			return
 		}
 	}
-	errorResponse := web.ErrorResponse{
-		Error: "Todo Not Found",
-	}
-	w.WriteHeader(http.StatusNotFound)
-	json.NewEncoder(w).Encode(errorResponse)
+
+	response.StatusCode = http.StatusNotFound
+	response.Message = "Todo Not Found"
 }

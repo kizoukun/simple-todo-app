@@ -12,7 +12,7 @@ async function onLoad() {
 async function refetchTodoItems() {
     const response = await fetchTodoItems();
     if (response) {
-        todos = response.todos;
+        todos = response.data;
         renderTodos();
         updateStats();
     }
@@ -36,11 +36,6 @@ const todosList = document.getElementById('todosList');
 const totalCount = document.getElementById('totalCount');
 const completedCount = document.getElementById('completedCount');
 const progressFill = document.getElementById('progressFill');
-
-
-function saveTodos() {
-    localStorage.setItem('todos', JSON.stringify(todos));
-}
 
 function updateStats() {
     const total = todos.length;
