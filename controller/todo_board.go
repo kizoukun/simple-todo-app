@@ -54,3 +54,25 @@ func DeleteTodoBoardController(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(response.StatusCode)
 	json.NewEncoder(w).Encode(response)
 }
+
+func UpdateTodoBoardController(w http.ResponseWriter, r *http.Request) {
+	var req web.UpdateTodoBoardRequest
+	var response web.ResponseHttp
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	req.BoardID, _ = strconv.Atoi(vars["id"])
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid request payload"
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	todoBoardUsecase := usecase.NewTodoBoardsUsecase()
+	todoBoardUsecase.UpdateTodoBoardHandler(ctx, req, &response)
+
+	w.WriteHeader(response.StatusCode)
+	json.NewEncoder(w).Encode(response)
+}

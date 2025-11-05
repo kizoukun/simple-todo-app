@@ -24,3 +24,9 @@ type GetTodoBoardsResponseData struct {
 type DeleteTodoBoardRequest struct {
 	BoardID int `json:"board_id"`
 }
+
+type UpdateTodoBoardRequest struct {
+	BoardID     int    `json:"board_id"`
+	Title       string `json:"title" validate:"required,max=255"`
+	Description string `json:"description" validate:"max=1000"`
+}

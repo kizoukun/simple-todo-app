@@ -33,7 +33,8 @@ func (uc *TodoUsecase) GetTodoHandler(context context.Context, req web.GetTodoRe
 		return
 	}
 
-	if _, err := uc.todoBoardRepo.GetById(req.BoardID); err != nil {
+	board, err := uc.todoBoardRepo.GetById(req.BoardID)
+	if err != nil {
 		response.StatusCode = http.StatusBadRequest
 		response.Message = "Invalid Board ID: " + err.Error()
 		return
@@ -47,7 +48,10 @@ func (uc *TodoUsecase) GetTodoHandler(context context.Context, req web.GetTodoRe
 	}
 
 	response.StatusCode = http.StatusOK
-	response.Data = data
+	response.Data = map[string]interface{}{
+		"board": board,
+		"todos": data,
+	}
 	response.Message = "Todos fetched successfully"
 	response.Success = true
 }

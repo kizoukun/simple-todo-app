@@ -27,6 +27,7 @@ func main() {
 	todos.HandleFunc("/boards", controller.GetTodoBoardController).Methods("GET")
 	todos.HandleFunc("/boards", controller.AddTodoBoardController).Methods("POST")
 	todos.HandleFunc("/boards/{id}", controller.DeleteTodoBoardController).Methods("DELETE")
+	todos.HandleFunc("/boards/{id}", controller.UpdateTodoBoardController).Methods("PUT")
 
 	//team invite
 	// register handlers with methods

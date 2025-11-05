@@ -147,3 +147,56 @@ func (uc *TodoBoardsUsecase) DeleteTodoBoardHandler(context context.Context, req
 	response.Message = "Todo board deleted successfully"
 	response.Success = true
 }
+
+func (uc *TodoBoardsUsecase) UpdateTodoBoardHandler(context context.Context, req web.UpdateTodoBoardRequest, response *web.ResponseHttp) {
+	user, ok := helper.UserFromContext(context)
+	if !ok || user == nil {
+		response.StatusCode = http.StatusUnauthorized
+		response.Message = "Unauthorized"
+		return
+	}
+
+	board, err := uc.boardsRepo.GetById(req.BoardID)
+	if err != nil {
+		response.StatusCode = http.StatusBadRequest
+		response.Message = "Invalid Board ID: " + err.Error()
+		return
+	}
+
+	if board.CreatedBy != user.ID {
+		response.StatusCode = http.StatusForbidden
+		response.Message = "You do not have permission to update this board"
+		return
+	}
+
+	board.Title = req.Title
+	board.Description = req.Description
+	board.UpdatedAt = time.Now()
+
+	boards, err := uc.boardsRepo.GetTodoBoard()
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to fetch todo boards: " + err.Error()
+		return
+	}
+
+	// update the board in the list
+	for i, b := range boards {
+		if b.ID == board.ID {
+			boards[i] = board
+			break
+		}
+	}
+
+	err = uc.boardsRepo.UpdateTodoBoard(boards)
+	if err != nil {
+		response.StatusCode = http.StatusInternalServerError
+		response.Message = "Failed to update todo board: " + err.Error()
+		return
+	}
+
+	response.StatusCode = http.StatusOK
+	response.Data = board
+	response.Message = "Todo board updated successfully"
+	response.Success = true
+}

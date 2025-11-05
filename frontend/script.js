@@ -6,11 +6,17 @@ document.addEventListener("DOMContentLoaded", onLoad)
 let todos = [];
 let boardId = null;
 
+let BoardTitle = '';
+let BoardDesc = '';
+
+const titleEl = document.getElementById('boardTitle');
+const descEl = document.getElementById('boardDescription');
+
 async function onLoad() {
     const urlParams = new URLSearchParams(window.location.search);
     boardId = urlParams.get('id');
     if (!boardId) {
-        alert("Board ID is missing in the URL");
+        window.location.href = "./boards/index.html";
         return;
     }
     await refetchTodoItems();
@@ -19,7 +25,12 @@ async function onLoad() {
 async function refetchTodoItems() {
     const response = await fetchTodoItems();
     if (response) {
-        todos = response.data;
+        const board = response.data.board;
+        titleEl.textContent = board.title;
+        descEl.textContent = board.description;
+        BoardTitle = board.title;
+        BoardDesc = board.description;
+        todos = response.data.todos;
         renderTodos();
         updateStats();
     }
@@ -200,41 +211,41 @@ async function copyclipBoard(code) {
 
     // Primary attempt: Clipboard API
     async function tryClipboardWrite(text) {
-      if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(text);
-      }
-      // If Clipboard API not available, reject to trigger fallback
-      return Promise.reject(new Error('Clipboard API unavailable'));
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        // If Clipboard API not available, reject to trigger fallback
+        return Promise.reject(new Error('Clipboard API unavailable'));
     }
 
     // Fallback using a temporary textarea + execCommand('copy')
     function fallbackCopyTextToClipboard(text) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      // Prevent scrolling to bottom
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      let ok = false;
-      try {
-        ok = document.execCommand('copy');
-      } catch (err) {
-        ok = false;
-      } finally {
-        document.body.removeChild(ta);
-      }
-      return ok;
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        // Prevent scrolling to bottom
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } catch (err) {
+            ok = false;
+        } finally {
+            document.body.removeChild(ta);
+        }
+        return ok;
     }
 
     // Try clipboard write, then fallback; show UI if all fail
     try {
-      await tryClipboardWrite(code);
-      alert("User invited — invite code copied to clipboard: " + code);
+        await tryClipboardWrite(code);
+        alert("User invited — invite code copied to clipboard: " + code);
     } catch (err) {
-      // If writeText rejected due to focus or permission, try fallback
-      const ok = fallbackCopyTextToClipboard(code);
+        // If writeText rejected due to focus or permission, try fallback
+        const ok = fallbackCopyTextToClipboard(code);
     }
 }
 
@@ -259,5 +270,52 @@ async function deleteBoard() {
         window.location.href = `./boards/index.html`;
     } catch (error) {
         console.error("Error deleting board:", error);
+    }
+}
+
+
+// Title: save on Enter (prevent newline) and blur
+titleEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // prevent newline
+        titleEl.blur();     // trigger blur -> save
+    }
+});
+titleEl.addEventListener('blur', saveTitle);
+
+// Description: save on blur
+descEl.addEventListener('blur', saveDesc);
+
+async function saveTitle() {
+    try {
+        const title = titleEl.textContent.trim() || '';
+        await saveBoard(title, BoardDesc);
+        BoardTitle = title;
+    } catch (err) {
+        console.error("Error saving title:", err);
+    }
+}
+async function saveDesc() {
+    try {
+        const description = descEl.textContent.trim() || '';
+        await saveBoard(BoardTitle, description);
+        BoardDesc = description;
+    } catch (err) {
+        console.error("Error saving description:", err);
+    }
+}
+
+
+async function saveBoard(title, description) {
+    const response = await fetch(`${BASE_API_URL}/boards/${boardId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify({ title: title, description: description })
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
     }
 }
