@@ -87,6 +87,8 @@ func (uc AuthUsecase) AuthRegisterHandler(req web.RegisterRequest, response *web
 		return
 	}
 
+	// future send an email verification
+
 	response.StatusCode = http.StatusCreated
 	response.Message = "User registered successfully"
 	response.Success = true
